@@ -25,12 +25,14 @@ jobs:
         include:
           - os: ubuntu-latest
             name: Linux
+            artifact: build/hrtng.so
           - os: macos-latest
             name: macOS
+            artifact: build/hrtng.dylib
           - os: windows-latest
             name: Windows
-    env:
-      CMAKE_BUILD_PARALLEL_LEVEL: 10
+            artifact: build/Release/hrtng.dll
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,12 +48,23 @@ jobs:
         run: |
           cmake -S src -B build -DCMAKE_BUILD_TYPE=Release
 
+      - name: Detect parallel jobs
+        id: jobs
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "count=${NUMBER_OF_PROCESSORS}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "count=$(sysctl -n hw.ncpu)" >> "$GITHUB_OUTPUT"
+          else
+            echo "count=$(nproc)" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build
         run: |
-          cmake --build build --config Release --clean-first
+          cmake --build build --config Release --clean-first --parallel ${{ steps.jobs.outputs.count }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: hrtng-${{ matrix.name }}
-          path: build/hrtng.*
+          path: ${{ matrix.artifact }}
