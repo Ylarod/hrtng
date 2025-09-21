@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux
+          - os: macos-latest
+            name: macOS
+          - os: windows-latest
+            name: Windows
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Clone IDA SDK
+        run: |
+          rm -rf ida-sdk
+          git clone --depth 1 https://github.com/HexRaysSA/ida-sdk.git ida-sdk
+
+      - name: Configure CMake
+        run: |
+          cmake -S src -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build build --config Release --clean-first
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hrtng-${{ matrix.name }}
+          path: build/hrtng.*

@@ -111,23 +111,38 @@ Messages, menu items, popup windows and dialog boxes belong to this plugin are m
 
 ## Building
 
- * Clone hrtng together with [Crypto++® Library CMake](https://github.com/abdes/cryptopp-cmake) submodule. Or put manually downloaded `cryptopp-cmake` source code to `hrtng/src/cryptopp-cmake` folder.
- 
-```
-cd src
-git clone --recurse-submodules https://github.com/KasperskyLab/hrtng.git
-```
+1. Clone the repository and initialise the `cryptopp-cmake` submodule (the IDA SDK is no longer part of the tree):
 
- * Copy `IDA_DIR/plugins/hexrays_sdk/include/hexrays.hpp` file to the `include` directory of the IDA SDK. (Not necessary since IDA 9.0/8.5)
- * Edit `hrtng/src/CMakeLists.txt` file to set correct path and version of used IDA SDK. To build later with another SDK version you may change cmake's `IDASDK_VER` variable with using `cmake -D`, `ccmake` or `cmake-gui` tools.
- * Create build directory, go into it, configure and build cmake project
-```
-mkdir bld && cd bld
-cmake <path-to/hrtng/src>
-cmake --build . --config Release -j 4 --clean-first
-```
+   ```
+   git clone https://github.com/KasperskyLab/hrtng.git
+   cd hrtng
+   git submodule update --init --recursive
+   ```
 
- * On the first build attempt with IDA SDK before version 9.1 there will be compiling error looks like:
+2. Obtain the IDA SDK (>= 7.3) and point the build system to it. You can either export environment variables before running CMake:
+
+   ```
+   export IDASDK_DIR=/path/to/ida-sdk/src
+   export IDASDK_VER=92        # optional, defaults to 92
+   ```
+
+   or pass the values directly to CMake:
+
+   ```
+   cmake -DIDASDK_DIR=/path/to/ida-sdk/src -DIDASDK_VER=92 <other-args>
+   ```
+
+   If you use IDA < 9.0/8.5, copy `IDA_DIR/plugins/hexrays_sdk/include/hexrays.hpp` into the SDK `include` directory before building.
+
+3. Build the project via CMake (or simply run `./build.sh`):
+
+   ```
+   mkdir build && cd build
+   cmake -DCMAKE_BUILD_TYPE=Release ../src
+   cmake --build . --config Release --clean-first
+   ```
+
+4. On the first build attempt with IDA SDK before version 9.1 there will be compiling error looks like:
 
 ```
 hrtng/src/deob.cpp:912:60: error: ‘class rangeset_t’ has no member named ‘as_rangevec’
@@ -155,4 +170,3 @@ This program is released under GPL v3 license
 
 ## Author
 * Sergey.Belov at kaspersky.com
-
